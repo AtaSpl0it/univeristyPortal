@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Professor Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html" class="active"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Enrollment</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <h3>Student Enrollment Requests</h3>
+                </div>
+                <div class="card-body">
+                    <div class="search-bar" style="margin-bottom: 20px; max-width: 500px;">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="enrollSearch" placeholder="Search by student name or ID...">
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="enrollTable">
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Student Name</th>
+                                    <th>Course</th>
+                                    <th>Request Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" style="text-align: center;">No pending enrollment requests.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Enrollment Statistics</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stats-grid" style="margin-bottom: 0;">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">📝</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Pending Requests</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green">✅</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Total Enrolled</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon orange">📊</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">System Capacity</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script>
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+    </script>
+</body>
+</html>

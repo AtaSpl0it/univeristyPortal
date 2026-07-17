@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Professor Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html" class="active"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Profile</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="profile-header">
+                <div class="profile-avatar-large" id="profile-avatar">P
+                    <div class="change-photo">📷</div>
+                </div>
+                <div class="profile-info">
+                    <h2 id="profile-name">Loading...</h2>
+                    <p>Professor</p>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Personal Information</h3>
+                <div class="info-grid">
+                    <div class="info-item"><label>Name</label><span id="detail-name">...</span></div>
+                    <div class="info-item"><label>Role</label><span>Professor</span></div>
+                    <div class="info-item"><label>National ID</label><span>...</span></div>
+                    <div class="info-item"><label>Department</label><span>...</span></div>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Security</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <div style="font-weight: 600;">Password</div>
+                                <div style="font-size: 13px; color: var(--text-muted);">Manage your account security</div>
+                            </div>
+                            <button class="btn btn-secondary" disabled>Change Password</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script>
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        // Populate what we know from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = localStorage.getItem('userName') || 'Professor';
+            document.getElementById('profile-name').textContent = username;
+            document.getElementById('detail-name').textContent = username;
+            document.getElementById('profile-avatar').textContent = username.charAt(0).toUpperCase();
+        });
+    </script>
+</body>
+</html>

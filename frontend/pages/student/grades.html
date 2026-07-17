@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grades - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .grade-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; margin: 0 auto; }
+        .grade-a { background: var(--success-light); color: var(--success); }
+        .grade-b { background: var(--info-light); color: var(--info); }
+        .grade-c { background: var(--warning-light); color: var(--warning); }
+        .grade-f { background: var(--danger-light); color: var(--danger); }
+        .grade-pending { background: var(--bg-tertiary); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar Content -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Student Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="grades.html" class="active"><span class="nav-icon">📊</span> Grades</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">My Grades</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="stats-grid" style="margin-bottom: 24px;">
+                <div class="stat-card">
+                    <div class="stat-icon green">✅</div>
+                    <div class="stat-value" id="top-avg">0.0</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">🎯</div>
+                    <div class="stat-value" id="top-completed">0</div>
+                    <div class="stat-label">Credits Completed</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Course Grades</h3>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-container" style="border: none;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Course Name</th>
+                                    <th>Professor</th>
+                                    <th style="text-align: center;">Final Score</th>
+                                    <th style="text-align: center;">Letter Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradesTableBody">
+                                <tr><td colspan="5" style="text-align: center;">Loading grades...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        function getGradeStyle(val) {
+            if (val === null || val === undefined) return { letter: '-', class: 'grade-pending' };
+            if (val >= 17) return { letter: 'A', class: 'grade-a' };
+            if (val >= 14) return { letter: 'B+', class: 'grade-b' };
+            if (val >= 10) return { letter: 'C', class: 'grade-c' };
+            return { letter: 'F', class: 'grade-f' };
+        }
+
+        async function loadGrades() {
+            try {
+                // Load Stats for top banner
+                const stats = await api.get('/student/stats');
+                document.getElementById('top-avg').textContent = stats.averageGrade;
+                document.getElementById('top-completed').textContent = stats.creditsCompleted;
+
+                // Load Courses for Table
+                const tbody = document.getElementById('gradesTableBody');
+                const courses = await api.get('/student/courses');
+                tbody.innerHTML = '';
+                
+                if(courses.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No enrollments found.</td></tr>';
+                    return;
+                }
+
+                courses.forEach(c => {
+                    const style = getGradeStyle(c.grade);
+                    const gradeVal = c.grade !== null ? c.grade : 'Not Graded';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${c.course_id}</strong></td>
+                        <td>${c.name}</td>
+                        <td>${c.professor}</td>
+                        <td style="text-align: center; font-weight: 700;">${gradeVal}</td>
+                        <td style="text-align: center;"><div class="grade-circle ${style.class}">${style.letter}</div></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                document.getElementById('gradesTableBody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Error loading data</td></tr>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadGrades);
+    </script>
+</body>
+</html>

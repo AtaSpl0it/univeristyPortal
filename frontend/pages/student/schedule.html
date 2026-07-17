@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar Content -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Student Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="grades.html"><span class="nav-icon">📊</span> Grades</a></li>
+                <li><a href="schedule.html" class="active"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">My Schedule</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Weekly Class Schedule</h3>
+                </div>
+                <div class="card-body" style="padding: 0; overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Time</th>
+                                <th>Course</th>
+                                <th>Location</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentScheduleBody">
+                            <tr><td colspan="5" style="text-align: center;">Loading schedule...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        async function loadSchedule() {
+            const tbody = document.getElementById('studentScheduleBody');
+            try {
+                const sessions = await api.get('/student/schedule');
+                tbody.innerHTML = '';
+
+                if (sessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">You have no classes scheduled.</td></tr>';
+                    return;
+                }
+
+                sessions.forEach(sess => {
+                    const tr = document.createElement('tr');
+                    
+                    let badgeClass = "badge-display";
+                    if (sess.type === 'Lab') badgeClass += " grade-good";
+                    else if (sess.type === 'Exam') badgeClass += " grade-fail";
+                    else badgeClass += " grade-excellent"; 
+
+                    tr.innerHTML = `
+                        <td><strong>${sess.day}</strong></td>
+                        <td>${sess.start_time} - ${sess.end_time}</td>
+                        <td><strong>${sess.course_id}</strong></td>
+                        <td>📍 ${sess.location}</td>
+                        <td><span class="${badgeClass}">${sess.type}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Failed to load schedule</td></tr>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSchedule);
+    </script>
+</body>
+</html>

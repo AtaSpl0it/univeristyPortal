@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Dashboard - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Professor Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">P</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Loading...</div>
+                    <div class="user-role" id="sidebar-role">Professor</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Dashboard</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="welcome-banner">
+                <div>
+                    <h1>Hello, <span id="welcome-name">...</span>! 👋</h1>
+                    <p>Welcome back to your professor dashboard.</p>
+                </div>
+                <div class="date-display" id="current-date">
+                    <div class="date-day">Loading...</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">📚</div>
+                    <div class="stat-value" id="stat-courses">0</div>
+                    <div class="stat-label">My Courses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">🎓</div>
+                    <div class="stat-value" id="stat-students">0</div>
+                    <div class="stat-label">My Students</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">📊</div>
+                    <div class="stat-value" id="stat-grade">0/20</div>
+                    <div class="stat-label">Average Grade</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">📅</div>
+                    <div class="stat-value" id="stat-attendance">0%</div>
+                    <div class="stat-label">Attendance Rate</div>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📚 My Assigned Courses</h3>
+                        <a href="courses.html" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <div class="card-body" id="recentCoursesContainer">
+                        <!-- Javascript will inject courses here -->
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📅 Weekly Schedule</h3>
+                        <a href="schedule.html" class="btn btn-sm btn-secondary">Full Schedule</a>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <table class="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="time-slot">9:00</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        async function loadDashboard() {
+            // Set User Names
+            const username = localStorage.getItem('userName') || 'Professor';
+            document.getElementById('welcome-name').textContent = username;
+            document.getElementById('sidebar-name').textContent = username;
+            document.getElementById('sidebar-avatar').textContent = username.charAt(0).toUpperCase();
+
+            try {
+                // FETCH REAL STATS
+                const stats = await api.get('/professor/stats');
+                document.getElementById('stat-courses').textContent = stats.totalCourses;
+                document.getElementById('stat-students').textContent = stats.totalStudents;
+                document.getElementById('stat-grade').textContent = stats.averageGrade + '/20';
+                document.getElementById('stat-attendance').textContent = stats.attendanceRate + '%';
+
+                // FETCH COURSES
+                const courses = await api.get('/professor/courses');
+                const container = document.getElementById('recentCoursesContainer');
+                container.innerHTML = ''; 
+
+                if (courses.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No courses assigned yet.</p>';
+                    return;
+                }
+
+                courses.slice(0, 3).forEach(course => {
+                    const card = document.createElement('div');
+                    card.className = 'course-card';
+                    card.style.marginBottom = '12px';
+                    card.innerHTML = `
+                        <div class="course-header">
+                            <span class="course-code">${course.code}</span>
+                        </div>
+                        <div class="course-name">${course.name}</div>
+                        <div class="course-actions" style="margin-top: 12px;">
+                            <a href="course-detail.html?id=${course.id}" class="btn btn-sm btn-primary">Grade Students</a>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>

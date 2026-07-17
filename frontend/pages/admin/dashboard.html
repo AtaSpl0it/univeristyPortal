@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Admin Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
+                <li><a href="students.html"><span class="nav-icon">🎓</span> All Students</a></li>
+                <li><a href="requests.html"><span class="nav-icon">📝</span> Signup Requests</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">A</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Admin</div>
+                    <div class="user-role" id="sidebar-role">Admin</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Dashboard</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="welcome-banner">
+                <div>
+                    <h1>Hello, <span id="welcome-name">Admin</span>! 👋</h1>
+                    <p>Welcome back to your admin dashboard.</p>
+                </div>
+                <div class="date-display" id="current-date">
+                    <div class="date-day">Loading...</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">📚</div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Active Courses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">🎓</div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">📊</div>
+                    <div class="stat-value">0%</div>
+                    <div class="stat-label">Average Grade</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">📅</div>
+                    <div class="stat-value">0%</div>
+                    <div class="stat-label">Attendance Rate</div>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📝 Recent Signup Requests</h3>
+                        <a href="requests.html" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <!-- Added ID and cleared fake data here -->
+                    <div class="card-body" id="recentRequestsContainer">
+                        <!-- Dynamic requests will be injected here -->
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📅 Upcoming Courses</h3>
+                        <a href="courses.html" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="course-card" style="margin-bottom: 12px;">
+                            <div class="course-header">
+                                <span class="course-code">CS-301</span>
+                                <span style="font-size: 12px; color: var(--text-muted);">Today, 9:00 AM</span>
+                            </div>
+                            <div class="course-name">Advanced Algorithms</div>
+                            <div class="course-meta">
+                                <span>👨‍🏫 Dr. Smith</span>
+                                <span>👥 45 Students</span>
+                                <span>📍 Hall A-102</span>
+                            </div>
+                        </div>
+                        <div class="course-card" style="margin-bottom: 12px;">
+                            <div class="course-header">
+                                <span class="course-code">MATH-205</span>
+                                <span style="font-size: 12px; color: var(--text-muted);">Today, 11:00 AM</span>
+                            </div>
+                            <div class="course-name">Linear Algebra</div>
+                            <div class="course-meta">
+                                <span>👨‍🏫 Prof. Johnson</span>
+                                <span>👥 38 Students</span>
+                                <span>📍 Hall B-205</span>
+                            </div>
+                        </div>
+                        <div class="course-card">
+                            <div class="course-header">
+                                <span class="course-code">PHY-401</span>
+                                <span style="font-size: 12px; color: var(--text-muted);">Today, 2:00 PM</span>
+                            </div>
+                            <div class="course-name">Quantum Mechanics</div>
+                            <div class="course-meta">
+                                <span>👨‍🏫 Dr. Brown</span>
+                                <span>👥 22 Students</span>
+                                <span>📍 Lab C-301</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        // Fix logout route for the dashboard
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        async function loadDashboardData() {
+            try {
+                // 1. Fetch and inject top-level statistics
+                const stats = await api.get('/admin/stats');
+                
+                // Select the stat cards by their index (since they don't have IDs yet)
+                const statValues = document.querySelectorAll('.stat-value');
+                if (statValues.length >= 4) {
+                    statValues[0].textContent = stats.activeCourses;
+                    statValues[1].textContent = stats.totalStudents;
+                    statValues[2].textContent = stats.averageGrade + '/20';
+                    statValues[3].textContent = stats.attendanceRate + '%';
+                }
+
+                // 2. Fetch and render the Upcoming Courses list
+                const courses = await api.get('/admin/recent-courses');
+                
+                // Find the container holding the upcoming courses
+                const coursesContainer = document.querySelector('.cards-grid .card:nth-child(2) .card-body');
+                coursesContainer.innerHTML = ''; // Clear the hardcoded HTML
+
+                if (courses.length === 0) {
+                    coursesContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No active courses found.</p>';
+                    return;
+                }
+
+                // Inject the live database courses
+                courses.forEach(course => {
+                    const courseCard = document.createElement('div');
+                    courseCard.className = 'course-card';
+                    courseCard.style.marginBottom = '12px';
+                    courseCard.innerHTML = `
+                        <div class="course-header">
+                            <span class="course-code">${course.code}</span>
+                            <span style="font-size: 12px; color: var(--text-muted);">Active</span>
+                        </div>
+                        <div class="course-name">${course.name}</div>
+                        <div class="course-meta">
+                            <span>👨‍🏫 ${course.professor}</span>
+                            <span>👥 ${course.students_count} Students</span>
+                        </div>
+                    `;
+                    coursesContainer.appendChild(courseCard);
+                });
+
+            } catch (error) {
+                console.error("Failed to load dashboard data:", error);
+                if (typeof showToast === 'function') showToast('خطا در دریافت اطلاعات داشبورد', 'error');
+            }
+        }
+
+        async function loadRecentRequests() {
+            const container = document.getElementById('recentRequestsContainer');
+            if (!container) return;
+
+            try {
+                // Use the API wrapper instead of raw fetch to handle tokens automatically
+                const requests = await api.get('/admin/recent-requests');
+                container.innerHTML = ''; 
+                
+                if (requests.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding: 20px; color: var(--text-muted);">No pending requests.</p>';
+                    return;
+                }
+
+                requests.forEach(req => {
+                    // Extract initials from full name
+                    const initials = req.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+                    const item = document.createElement('div');
+                    item.className = 'request-item';
+                    
+                    item.innerHTML = `
+                        <div class="request-avatar">${initials}</div>
+                        <div class="request-info">
+                            <div class="request-name">${req.name}</div>
+                            <div class="request-detail">National ID: ${req.username}</div>
+                        </div>
+                        <div class="request-actions">
+                            <a href="requests.html" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 12px;">Review</a>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            } catch (error) {
+                console.error("Error loading recent requests:", error);
+                container.innerHTML = '<p style="text-align:center; padding: 20px; color: var(--danger-color);">Failed to load data.</p>';
+            }
+        }
+
+        // Run the fetch functions as soon as the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+            loadRecentRequests();
+        });
+    </script>
+</body>
+</html>

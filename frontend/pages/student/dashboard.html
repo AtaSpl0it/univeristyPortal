@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar Content -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Student Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="grades.html"><span class="nav-icon">📊</span> Grades</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">S</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Student</div>
+                    <div class="user-role" id="sidebar-role">Student</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Dashboard</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="welcome-banner">
+                <div>
+                    <h1>Hello, <span id="welcome-name">...</span>! 👋</h1>
+                    <p>Welcome back to your student dashboard.</p>
+                </div>
+                <div class="date-display" id="current-date">
+                    <div class="date-day">Loading...</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">📚</div>
+                    <div class="stat-value" id="stat-courses">0</div>
+                    <div class="stat-label">Active Courses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">🎯</div>
+                    <div class="stat-value" id="stat-credits">0</div>
+                    <div class="stat-label">Total Credits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">📊</div>
+                    <div class="stat-value" id="stat-grade">0.0</div>
+                    <div class="stat-label">Average Grade</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">🎓</div>
+                    <div class="stat-value" id="stat-completed">0</div>
+                    <div class="stat-label">Credits Completed</div>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📚 My Enrolled Courses</h3>
+                        <a href="courses.html" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <div class="card-body" id="enrolledCoursesContainer">
+                        <p style="text-align:center; color:var(--text-muted);">Loading courses...</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📈 Academic Progress</h3>
+                    </div>
+                    <div class="card-body" style="display: flex; justify-content: center; align-items: center;">
+                        <div style="text-align: center;">
+                            <svg class="progress-ring" viewBox="0 0 120 120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="52"/>
+                                <circle class="progress-ring-fill" id="progress-circle" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+                                <text class="progress-ring-text" x="60" y="65" text-anchor="middle" id="progress-text">0%</text>
+                            </svg>
+                            <div style="margin-top: 12px; font-weight: 600;">Overall Average</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        async function loadDashboard() {
+            const username = localStorage.getItem('userName') || 'Student';
+            document.getElementById('welcome-name').textContent = username;
+            document.getElementById('sidebar-name').textContent = username;
+            document.getElementById('sidebar-avatar').textContent = username.charAt(0).toUpperCase();
+
+            try {
+                // Fetch Stats
+                const stats = await api.get('/student/stats');
+                document.getElementById('stat-courses').textContent = stats.activeCourses;
+                document.getElementById('stat-credits').textContent = stats.totalCredits;
+                document.getElementById('stat-grade').textContent = stats.averageGrade + ' / 20';
+                document.getElementById('stat-completed').textContent = stats.creditsCompleted;
+
+                // Animate Progress Ring based on GPA (Percentage of 20)
+                const percentage = (stats.averageGrade / 20) * 100;
+                document.getElementById('progress-text').textContent = `${percentage.toFixed(0)}%`;
+                const circle = document.getElementById('progress-circle');
+                const offset = 326.73 - (percentage / 100) * 326.73;
+                circle.style.strokeDashoffset = offset;
+
+                // Fetch Enrolled Courses
+                const courses = await api.get('/student/courses');
+                const container = document.getElementById('enrolledCoursesContainer');
+                container.innerHTML = '';
+                
+                if (courses.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">You are not enrolled in any courses.</p>';
+                    return;
+                }
+
+                courses.slice(0, 3).forEach(course => {
+                    const card = document.createElement('div');
+                    card.className = 'course-card';
+                    card.style.marginBottom = '12px';
+                    card.innerHTML = `
+                        <div class="course-header">
+                            <span class="course-code">${course.course_id}</span>
+                        </div>
+                        <div class="course-name">${course.name}</div>
+                        <div class="course-meta">
+                            <span>👨‍🏫 ${course.professor}</span>
+                            <span>📚 ${course.credits} Credits</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>

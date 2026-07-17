@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Students - Admin Portal</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Admin Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
+                <li><a href="students.html" class="active"><span class="nav-icon">🎓</span> All Students</a></li>
+                <li><a href="requests.html"><span class="nav-icon">📝</span> Signup Requests</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">A</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Admin</div>
+                    <div class="user-role" id="sidebar-role">Manager</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">All Students</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div class="search-bar" style="max-width: 400px; flex-grow: 1;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="studentSearch" placeholder="Search by name or student number...">
+                </div>
+                <button class="btn btn-primary" onclick="openModal('addStudentModal'); isEditMode = false;">+ Add Student</button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table" id="studentsTable">
+                    <thead>
+                        <tr>
+                            <th>Student Number</th>
+                            <th>Name</th>
+                            <th>Enrolled Courses</th>
+                            <th>GPA (out of 20)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows dynamically injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Student Modal -->
+    <div class="modal-overlay" id="addStudentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Student Details</h3>
+                <button class="modal-close" onclick="closeModal('addStudentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Hidden ID for updates -->
+                <input type="hidden" id="studentDbId"> 
+                
+                <div class="form-group">
+                    <label class="form-label">Student Number (Username)</label>
+                    <input type="text" id="studentNum" class="form-input" placeholder="e.g. 9912345">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="studentName" class="form-input" placeholder="e.g. Ali Rezaei">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="studentPass" class="form-input" placeholder="Leave blank to keep current">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addStudentModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveStudentBtn">Save Student</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        // Automatically use the host's IP address instead of hardcoding
+        const BASE_URL = `http://${window.location.hostname}:3000/api`;
+        
+        // Bulletproof Logout logic attached to window so inline HTML onclick works
+        window.logout = function() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userRole');
+            window.location.href = '../../index.html';
+        };
+
+        const customFetch = async (endpoint, method, body = null) => {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            };
+            if (body) options.body = JSON.stringify(body);
+            
+            const response = await fetch(`${BASE_URL}${endpoint}`, options);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                let errorMsg = err.detail || 'Server Error';
+                if (Array.isArray(errorMsg)) {
+                    errorMsg = errorMsg.map(e => `${e.loc[e.loc.length-1]}: ${e.msg}`).join(' | ');
+                }
+                throw new Error(errorMsg);
+            }
+            return response.json();
+        };
+
+        const tableBody = document.querySelector('#studentsTable tbody');
+        window.isEditMode = false;
+
+        async function loadStudents() {
+            try {
+                // Using standard API wrapper for GET request
+                const students = await api.get('/admin/students');
+                tableBody.innerHTML = ''; 
+
+                if (students.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No students found.</td></tr>';
+                    return;
+                }
+
+                students.forEach(student => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${student.student_number}</strong></td>
+                        <td>${student.name}</td>
+                        <td>${student.enrolled_courses}</td>
+                        <td><span style="color: ${student.gpa >= 10 ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight: 600;">${student.gpa > 0 ? student.gpa : '-'}</span></td>
+                        <td><span class="status-badge active">${student.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary edit-btn" data-id="${student.db_id}" data-num="${student.student_number}" data-name="${student.name}">✏️</button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${student.db_id}">🗑️</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                attachActionListeners();
+            } catch (error) {
+                showToast('Failed to load students list', 'error');
+            }
+        }
+
+        function attachActionListeners() {
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if (confirm('Are you sure you want to completely delete this student?')) {
+                        try {
+                            await customFetch(`/admin/students/${e.target.dataset.id}`, 'DELETE');
+                            showToast('Student deleted', 'success');
+                            loadStudents(); 
+                        } catch (err) {
+                            showToast(err.message, 'error');
+                        }
+                    }
+                });
+            });
+
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    window.isEditMode = true;
+                    document.getElementById('modalTitle').textContent = 'Edit Student';
+                    document.getElementById('studentDbId').value = e.target.dataset.id;
+                    document.getElementById('studentNum').value = e.target.dataset.num;
+                    document.getElementById('studentName').value = e.target.dataset.name;
+                    document.getElementById('studentPass').value = ''; // Leave blank by default
+                    document.getElementById('addStudentModal').classList.add('active');
+                });
+            });
+        }
+
+        document.getElementById('saveStudentBtn').addEventListener('click', async () => {
+            const dbId = document.getElementById('studentDbId').value;
+            const payload = {
+                username: document.getElementById('studentNum').value.trim(),
+                name: document.getElementById('studentName').value.trim(),
+                password: document.getElementById('studentPass').value || null
+            };
+
+            if (!payload.username || !payload.name) {
+                showToast('Student number and name are required', 'warning');
+                return;
+            }
+
+            try {
+                if (window.isEditMode) {
+                    await customFetch(`/admin/students/${dbId}`, 'PUT', payload);
+                    showToast('Student updated successfully', 'success');
+                } else {
+                    await customFetch('/admin/students', 'POST', payload);
+                    showToast('Student added successfully', 'success');
+                }
+                closeModal('addStudentModal');
+                loadStudents();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+
+        // Reset Modal logic
+        const originalOpenModal = window.openModal;
+        window.openModal = function(id) {
+            if(id === 'addStudentModal' && !window.isEditMode) {
+                document.getElementById('modalTitle').textContent = 'Add New Student';
+                document.getElementById('studentDbId').value = '';
+                document.getElementById('studentNum').value = '';
+                document.getElementById('studentName').value = '';
+                document.getElementById('studentPass').value = '';
+            }
+            if (originalOpenModal) originalOpenModal(id);
+            else document.getElementById(id).classList.add('active');
+        };
+
+        // Search filter
+        document.getElementById('studentSearch').addEventListener('input', function() {
+            const term = this.value.toLowerCase();
+            document.querySelectorAll('#studentsTable tbody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', loadStudents);
+    </script>
+</body>
+</html>

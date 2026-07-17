@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar Content -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Professor Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="schedule.html" class="active"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">P</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Professor</div>
+                    <div class="user-role" id="sidebar-role">Professor</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">My Schedule</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-primary btn-sm" onclick="openModal('addSessionModal')">+ Add Session</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Weekly Teaching Schedule</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Time</th>
+                                <th>Course</th>
+                                <th>Location</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Loading schedule...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Adding Sessions -->
+    <div class="modal-overlay" id="addSessionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add New Session</h3>
+                <button class="modal-close" onclick="closeModal('addSessionModal')">&times;</button>
+            </div>
+            <form id="sessionForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Course</label>
+                        <select class="form-select" id="sessCourse" required>
+                            <option value="">Loading courses...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Day</label>
+                        <select class="form-select" id="sessDay" required>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" class="form-input" id="sessStart" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">End Time</label>
+                            <input type="time" class="form-input" id="sessEnd" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-input" id="sessLocation" placeholder="e.g. Hall A-102" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Session Type</label>
+                        <select class="form-select" id="sessType">
+                            <option value="Lecture">Lecture</option>
+                            <option value="Lab">Lab</option>
+                            <option value="Exam">Exam</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addSessionModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Session</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        // Populate User Details
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = localStorage.getItem('userName') || 'Professor';
+            const avatar = document.getElementById('sidebar-avatar');
+            const nameEl = document.getElementById('sidebar-name');
+            if(avatar) avatar.textContent = username.charAt(0).toUpperCase();
+            if(nameEl) nameEl.textContent = username;
+        });
+
+        // Global Delete Function mapped directly to the buttons
+        window.deleteSession = async function(id) {
+            if (!confirm('Are you sure you want to delete this session?')) return;
+            
+            try {
+                // Using standard fetch for the DELETE route to ensure it works smoothly
+                const response = await fetch(`http://${window.location.hostname}:3000/api/professor/schedule/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete session');
+                
+                if(typeof showToast === 'function') showToast('Session deleted', 'success');
+                loadPageData(); // Instantly reload the table
+            } catch (error) {
+                if(typeof showToast === 'function') showToast(error.message, 'error');
+            }
+        };
+
+        async function loadPageData() {
+            try {
+                // 1. Populate the Course Dropdown in the Modal
+                const courses = await api.get('/professor/courses');
+                const courseSelect = document.getElementById('sessCourse');
+                courseSelect.innerHTML = '<option value="">Select a course...</option>';
+                courses.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = `${c.code} - ${c.name}`;
+                    courseSelect.appendChild(opt);
+                });
+
+                // 2. Fetch and render the actual schedule
+                const sessions = await api.get('/professor/schedule');
+                const tbody = document.getElementById('scheduleTableBody');
+                tbody.innerHTML = '';
+
+                if(sessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No sessions scheduled yet.</td></tr>';
+                    return;
+                }
+
+                sessions.forEach(sess => {
+                    const tr = document.createElement('tr');
+                    
+                    let badgeClass = "badge-display";
+                    if (sess.type === 'Lab') badgeClass += " grade-good";
+                    else if (sess.type === 'Exam') badgeClass += " grade-fail";
+                    else badgeClass += " grade-excellent"; 
+
+                    tr.innerHTML = `
+                        <td><strong>${sess.day}</strong></td>
+                        <td>${sess.start_time} - ${sess.end_time}</td>
+                        <td><strong>${sess.course_id}</strong></td>
+                        <td>📍 ${sess.location}</td>
+                        <td><span class="${badgeClass}">${sess.type}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSession(${sess.id})">🗑️ Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('scheduleTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Error loading data.</td></tr>';
+            }
+        }
+
+        // Handle Modal Form Submission
+        document.getElementById('sessionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const payload = {
+                course_id: document.getElementById('sessCourse').value,
+                day: document.getElementById('sessDay').value,
+                start_time: document.getElementById('sessStart').value,
+                end_time: document.getElementById('sessEnd').value,
+                location: document.getElementById('sessLocation').value,
+                session_type: document.getElementById('sessType').value
+            };
+
+            try {
+                await api.post('/professor/schedule', payload);
+                if(typeof showToast === 'function') showToast('Session added!', 'success');
+                closeModal('addSessionModal');
+                e.target.reset(); // Clear the form
+                loadPageData(); // Reload the table instantly
+            } catch (error) {
+                if(typeof showToast === 'function') showToast('Failed to add session', 'error');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadPageData);
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup Requests - Admin Portal</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar content (unchanged) -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Admin Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
+                <li><a href="students.html"><span class="nav-icon">🎓</span> All Students</a></li>
+                <li><a href="requests.html" class="active"><span class="nav-icon">📝</span> Signup Requests</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Pending Signup Requests</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="table-container">
+                <table class="data-table" id="requestsTable">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>National ID (Login)</th>
+                            <th>Full Name</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows dynamically injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        const BASE_URL = `http://${window.location.hostname}:3000/api`;
+        
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        const customFetch = async (endpoint, method) => {
+            const response = await fetch(`${BASE_URL}${endpoint}`, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.detail || 'Server Error');
+            }
+            return response.json();
+        };
+
+        const tableBody = document.querySelector('#requestsTable tbody');
+
+        async function loadRequests() {
+            try {
+                const requests = await api.get('/admin/signup-requests');
+                tableBody.innerHTML = ''; 
+
+                if (requests.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No pending requests.</td></tr>';
+                    return;
+                }
+
+                requests.forEach(req => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${req.id}</td>
+                        <td><strong>${req.username}</strong></td>
+                        <td>${req.name}</td>
+                        <td><span class="status-badge pending" style="background-color: #fff3cd; color: #856404;">${req.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary approve-btn" data-id="${req.id}">✔️ Approve</button>
+                            <button class="btn btn-sm btn-danger reject-btn" data-id="${req.id}">❌ Reject</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                attachActionListeners();
+            } catch (error) {
+                if (typeof showToast === 'function') showToast('Failed to load requests', 'error');
+            }
+        }
+
+        function attachActionListeners() {
+            document.querySelectorAll('.approve-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.dataset.id;
+                    try {
+                        await customFetch(`/admin/signup-requests/${id}/approve`, 'POST');
+                        if (typeof showToast === 'function') showToast('Student approved and registered!', 'success');
+                        loadRequests(); 
+                    } catch (err) {
+                        if (typeof showToast === 'function') showToast(err.message, 'error');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.reject-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.dataset.id;
+                    if (confirm('Are you sure you want to reject this signup?')) {
+                        try {
+                            await customFetch(`/admin/signup-requests/${id}/reject`, 'POST');
+                            if (typeof showToast === 'function') showToast('Request rejected.', 'success');
+                            loadRequests(); 
+                        } catch (err) {
+                            if (typeof showToast === 'function') showToast(err.message, 'error');
+                        }
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadRequests);
+    </script>
+</body>
+</html>

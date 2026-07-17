@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - SAS University</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 480px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <div class="auth-card fade-in" style="max-width: 600px;">
+                <div class="auth-logo">
+                    <h1>SAS</h1>
+                    <p>Create Your Account - SAS University</p>
+                </div>
+                
+                <form id="signupForm">
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-input" id="firstname" placeholder="First name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-input" id="lastname" placeholder="Last name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label class="form-label">Date of Birth</label>
+                            <input type="date" class="form-input" id="dob" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">National ID (Login Username)</label>
+                            <input type="text" class="form-input" id="nationalId" placeholder="e.g. 9912345" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="email" placeholder="your@email.com" required>
+                    </div>
+                    
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-input" id="phone" placeholder="+1 234 567 8900" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Address</label>
+                            <input type="text" class="form-input" id="address" placeholder="Your address" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-input" id="signupPassword" placeholder="Create a password" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('signupPassword', this)">👁️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm password" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword', this)">👁️</button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                        Submit Request
+                    </button>
+                </form>
+                
+                <div class="auth-footer">
+                    Already have an account? <a href="/">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        const BASE_URL = `http://${window.location.hostname}:3000/api`;
+        
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const firstname = document.getElementById('firstname').value.trim();
+            const lastname = document.getElementById('lastname').value.trim();
+            const username = document.getElementById('nationalId').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                if (typeof showToast === 'function') showToast('Passwords do not match!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        name: `${firstname} ${lastname}`,
+                        password: password
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.detail || "Signup failed");
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast('Request submitted! Waiting for Admin approval.', 'success');
+                } else {
+                    alert('Request submitted! Waiting for Admin approval.');
+                }
+                
+                setTimeout(() => {
+                    window.location.href = '/'; // login page
+                }, 2000);
+
+            } catch (error) {
+                if (typeof showToast === 'function') {
+                    showToast(error.message, 'error');
+                } else {
+                    alert(error.message);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Admin Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html" class="active"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
+                <li><a href="students.html"><span class="nav-icon">🎓</span> All Students</a></li>
+                <li><a href="requests.html"><span class="nav-icon">📝</span> Signup Requests</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">A</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Admin</div>
+                    <div class="user-role" id="sidebar-role">Admin</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Profile</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="profile-header">
+                <div class="profile-avatar-large" id="profile-avatar">A
+                    <div class="change-photo">📷</div>
+                </div>
+                <div class="profile-info">
+                    <h2 id="profile-name">Admin User</h2>
+                    <p>System Administrator • IT Department</p>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Personal Information</h3>
+                <div class="info-grid">
+                    <div class="info-item"><label>First Name</label><span>Admin</span></div>
+                    <div class="info-item"><label>Last Name</label><span>User</span></div>
+                    <div class="info-item"><label>National ID</label><span>1234567890</span></div>
+                    <div class="info-item"><label>Date of Birth</label><span>January 15, 1985</span></div>
+                    <div class="info-item"><label>Role Title</label><span>System Administrator</span></div>
+                    <div class="info-item"><label>Department</label><span>IT Department</span></div>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Contact Information</h3>
+                <div class="info-grid">
+                    <div class="info-item"><label>Email</label><span>admin@sas.edu</span></div>
+                    <div class="info-item"><label>Phone</label><span>+1 234 567 8900</span></div>
+                    <div class="info-item"><label>Address</label><span>123 University Ave, Campus City</span></div>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Security</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <div style="font-weight: 600;">Password</div>
+                                <div style="font-size: 13px; color: var(--text-muted);">Last changed 30 days ago</div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="openModal('passwordModal')">Change Password</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600;">Two-Factor Authentication</div>
+                                <div style="font-size: 13px; color: var(--text-muted);">Enable extra security</div>
+                            </div>
+                            <button class="btn btn-secondary">Enable 2FA</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Change Password</h3>
+                <button class="modal-close" onclick="closeModal('passwordModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">Current Password</label><input type="password" class="form-input" placeholder="Enter current password"></div>
+                <div class="form-group"><label class="form-label">New Password</label><input type="password" class="form-input" placeholder="Enter new password"></div>
+                <div class="form-group"><label class="form-label">Confirm New Password</label><input type="password" class="form-input" placeholder="Confirm new password"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('passwordModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="closeModal('passwordModal'); showToast('Password updated successfully', 'success')">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/main.js"></script>
+</body>
+</html>

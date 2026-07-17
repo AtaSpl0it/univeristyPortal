@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Grading - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .grade-input { width: 80px; text-align: center; padding: 8px; border: 2px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); font-weight: 600; }
+        .grade-input:focus { outline: none; border-color: var(--accent-secondary); }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar content identical to others -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Professor Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html" class="active"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title" id="courseTitle">Loading Course...</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-primary btn-sm" id="saveGradesBtn">💾 Save Grades</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body">
+                    <div style="display: flex; gap: 32px; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Course Code</div>
+                            <div style="font-size: 18px; font-weight: 700;" id="infoCourseCode">...</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Total Enrolled</div>
+                            <div style="font-size: 18px; font-weight: 700;" id="infoTotalStudents">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Final Grade (0-20)</th>
+                            <th>Status Badge</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rosterTableBody">
+                        <tr><td colspan="4" style="text-align: center;">Loading roster...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id');
+
+        // This makes sure the letter badge updates immediately when the professor types a grade
+        window.updateBadge = function(inputElement) {
+            const row = inputElement.closest('tr');
+            const gradeSpan = row.querySelector('.badge-display');
+            const val = parseFloat(inputElement.value) || 0;
+            
+            if (val >= 17) { gradeSpan.textContent = 'A'; gradeSpan.className = 'badge-display grade-excellent'; }
+            else if (val >= 14) { gradeSpan.textContent = 'B+'; gradeSpan.className = 'badge-display grade-good'; }
+            else if (val >= 10) { gradeSpan.textContent = 'C'; gradeSpan.className = 'badge-display grade-pass'; }
+            else { gradeSpan.textContent = 'F'; gradeSpan.className = 'badge-display grade-fail'; }
+        }
+
+        async function loadRoster() {
+            if (!courseId) {
+                document.getElementById('courseTitle').textContent = "Course Not Found";
+                return;
+            }
+
+            document.getElementById('courseTitle').textContent = `Grading: ${courseId}`;
+            document.getElementById('infoCourseCode').textContent = courseId;
+            const tableBody = document.getElementById('rosterTableBody');
+
+            try {
+                const students = await api.get(`/professor/courses/${courseId}/students`);
+                document.getElementById('infoTotalStudents').textContent = students.length;
+                tableBody.innerHTML = '';
+
+                if (students.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No students enrolled yet.</td></tr>';
+                    return;
+                }
+
+                students.forEach(student => {
+                    const gradeVal = student.currentGrade !== null ? student.currentGrade : '';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${student.studentCode}</td>
+                        <td>${student.name}</td>
+                        <td>
+                            <input type="number" class="grade-input" data-id="${student.id}" value="${gradeVal}" min="0" max="20" step="0.25" onkeyup="updateBadge(this)" onchange="updateBadge(this)">
+                        </td>
+                        <td><span class="badge-display" style="font-weight: 600;">-</span></td>
+                    `;
+                    tableBody.appendChild(tr);
+                    
+                    // Trigger badge calculation immediately for existing grades
+                    const input = tr.querySelector('.grade-input');
+                    if(gradeVal !== '') updateBadge(input);
+                });
+
+            } catch (error) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Failed to load roster.</td></tr>';
+            }
+        }
+
+        // Bulk Save Logic
+        document.getElementById('saveGradesBtn').addEventListener('click', async () => {
+            const inputs = document.querySelectorAll('.grade-input');
+            const payload = { grades: [] };
+            
+            inputs.forEach(inp => {
+                // Only send non-empty grades
+                if(inp.value.trim() !== '') {
+                    payload.grades.push({
+                        studentId: parseInt(inp.dataset.id),
+                        grade: parseFloat(inp.value)
+                    });
+                }
+            });
+
+            if(payload.grades.length === 0) {
+                if(typeof showToast === 'function') showToast('No grades to save!', 'warning');
+                return;
+            }
+
+            try {
+                await api.post(`/professor/courses/${courseId}/grades`, payload);
+                if(typeof showToast === 'function') showToast('Grades successfully saved!', 'success');
+            } catch (error) {
+                if(typeof showToast === 'function') showToast('Failed to save grades.', 'error');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadRoster);
+    </script>
+</body>
+</html>

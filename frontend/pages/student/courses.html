@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Courses - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar Content identical to others -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Student Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html" class="active"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="grades.html"><span class="nav-icon">📊</span> Grades</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">My Courses</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="search-bar" style="margin-bottom: 24px; max-width: 500px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="courseSearch" placeholder="Search your courses...">
+            </div>
+
+            <div class="table-container">
+                <table class="data-table" id="coursesTable">
+                    <thead>
+                        <tr>
+                            <th>Course Code</th>
+                            <th>Course Name</th>
+                            <th>Instructor</th>
+                            <th>Credits</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentCoursesBody">
+                        <tr><td colspan="5" style="text-align: center;">Loading courses...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        async function loadCourses() {
+            const tbody = document.getElementById('studentCoursesBody');
+            try {
+                const courses = await api.get('/student/courses');
+                tbody.innerHTML = '';
+                
+                if(courses.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">You have not enrolled in any courses.</td></tr>';
+                    return;
+                }
+
+                courses.forEach(course => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${course.course_id}</strong></td>
+                        <td>${course.name}</td>
+                        <td>${course.professor}</td>
+                        <td>${course.credits}</td>
+                        <td><span class="status-badge active">Enrolled</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Error loading courses</td></tr>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCourses);
+        // Hook up search filter
+        document.getElementById('courseSearch').addEventListener('keyup', function() {
+            filterTable('courseSearch', 'coursesTable');
+        });
+    </script>
+</body>
+</html>

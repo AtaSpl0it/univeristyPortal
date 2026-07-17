@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment - SAS University</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <!-- Sidebar Content -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Student Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
+                <li><a href="enrollment.html" class="active"><span class="nav-icon">📝</span> Enrollment</a></li>
+                <li><a href="grades.html"><span class="nav-icon">📊</span> Grades</a></li>
+                <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">Course Enrollment</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <h3>Available Courses</h3>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-container" style="border: none;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Professor</th>
+                                    <th>Credits</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="availableCoursesBody">
+                                <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="enrollment-summary">
+                <h3>📋 Selection Summary</h3>
+                <div id="summaryContent">
+                    <div class="summary-row">
+                        <span>Selected Courses</span>
+                        <span id="selectedCount">0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Total Credits</span>
+                        <span id="totalCredits">0</span>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 12px;">
+                    <button class="btn btn-primary" id="confirmBtn">✅ Confirm Enrollment</button>
+                    <button class="btn btn-secondary" onclick="window.clearSummary()">Clear Selection</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        window.logout = function() {
+            localStorage.clear();
+            window.location.href = '/'; 
+        };
+
+        let selectedCourseIds = [];
+        let totalCredits = 0;
+
+        async function loadAvailableCourses() {
+            const tbody = document.getElementById('availableCoursesBody');
+            try {
+                const courses = await api.get('/student/available-courses');
+                tbody.innerHTML = '';
+                
+                if (courses.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No new courses available for enrollment.</td></tr>';
+                    return;
+                }
+
+                courses.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${c.id}</strong><br><small>${c.name}</small></td>
+                        <td>${c.professor}</td>
+                        <td>${c.credits}</td>
+                        <td>
+                            <button class="btn btn-success btn-sm add-btn" data-id="${c.id}" data-credits="${c.credits}">+ Add</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Attach click events
+                document.querySelectorAll('.add-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        const credits = parseInt(this.getAttribute('data-credits'));
+
+                        if (selectedCourseIds.includes(id)) return;
+
+                        selectedCourseIds.push(id);
+                        totalCredits += credits;
+                        updateSummary();
+                        
+                        this.textContent = '✓ Added';
+                        this.disabled = true;
+                        this.style.opacity = '0.6';
+                    });
+                });
+
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Failed to load courses</td></tr>';
+            }
+        }
+
+        function updateSummary() {
+            document.getElementById('selectedCount').textContent = selectedCourseIds.length;
+            document.getElementById('totalCredits').textContent = totalCredits;
+        }
+
+        window.clearSummary = function() {
+            selectedCourseIds = [];
+            totalCredits = 0;
+            updateSummary();
+            
+            document.querySelectorAll('.add-btn').forEach(btn => {
+                btn.textContent = '+ Add';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        };
+
+        document.getElementById('confirmBtn').addEventListener('click', async () => {
+            if (selectedCourseIds.length === 0) {
+                if(typeof showToast === 'function') showToast('Please select at least one course.', 'warning');
+                return;
+            }
+
+            try {
+                await api.post('/student/enroll', { course_ids: selectedCourseIds });
+                if(typeof showToast === 'function') showToast('Enrollment successful!', 'success');
+                window.clearSummary();
+                loadAvailableCourses(); // Reload table
+            } catch (error) {
+                if(typeof showToast === 'function') showToast('Enrollment failed.', 'error');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadAvailableCourses);
+    </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SAS University</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <div class="auth-card fade-in">
+                <div class="auth-logo">
+                    <h1>SAS</h1>
+                    <p>SAS University - Student Academic System</p>
+                </div>
+                
+                <!-- Removed onsubmit="handleLogin(event)" to prevent scope conflicts -->
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="username" placeholder="Enter your username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-input" id="password" placeholder="Enter your password" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('password', this)">👁️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-secondary);">
+                            <input type="checkbox" style="width: 16px; height: 16px;">
+                            Remember me
+                        </label>
+                        <a href="#" style="font-size: 14px; color: var(--accent-secondary);">Forgot password?</a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                        Sign In
+                    </button>
+                </form>
+                
+                <div class="auth-footer">
+                    Don't have an account? <a href="pages/signup.html">Create an account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keep main.js for UI functions like showToast -->
+    <script src="js/main.js"></script>
+    
+    <!-- Use type="module" to import auth.js safely -->
+    <script type="module">
+        import auth from './js/auth.js';
+
+        // Fast route redirect check: if user already has tokens, bypass login form automatically
+        if (localStorage.getItem('token') && localStorage.getItem('user_role')) {
+            auth.redirectToDashboard(localStorage.getItem('user_role'));
+        }
+
+        const form = document.getElementById('loginForm');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Explicitly block the browser from refreshing
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                // Pass credentials to your auth.js logic
+                await auth.login(username, password);
+            } catch (error) {
+                console.error("Login Integration Error:", error);
+                
+                // Trigger the toast notification from main.js
+                if (typeof showToast === 'function') {
+                    showToast(/*error.message || */'Invalid username or password.', 'error');
+                } else {
+                    alert(/*error.message || */'Invalid username or password.');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
