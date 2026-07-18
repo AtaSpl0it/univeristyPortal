@@ -5,9 +5,6 @@ __pycache__/
 venv/
 
 # Database
-*.sqlite
-*.db
-uni_v3.db
 
 # Secrets & Environment
 .env

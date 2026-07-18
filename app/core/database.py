@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 DATABASE_URL = "sqlite:///./uni_v3.db"
@@ -9,18 +9,32 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    password = Column(String, nullable=False) # Will store Bcrypt hash
+    username = Column(String, unique=True, index=True, nullable=False) 
+    password = Column(String, nullable=False)
     role = Column(String, nullable=False)
     name = Column(String, nullable=False)
+    national_id = Column(String, unique=True, nullable=True) 
+    # New Profile Fields
+    phone_number = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    date_of_birth = Column(String, nullable=True)
 
 class SignupRequest(Base):
     __tablename__ = "signup_requests"
-    
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, index=True) 
+    national_id = Column(String, index=True) 
     name = Column(String)
     password = Column(String)
+    status = Column(String, default="Pending")
+    # New Profile Fields
+    phone_number = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    date_of_birth = Column(String, nullable=True)
+
+class PasswordResetRequest(Base):
+    __tablename__ = "password_reset_requests"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     status = Column(String, default="Pending")
 
 class Course(Base):
@@ -29,6 +43,12 @@ class Course(Base):
     name = Column(String, nullable=False)
     credits = Column(Integer, nullable=False)
     professor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    selection_deadline = Column(String, nullable=True)
+    start_date = Column(String, nullable=True)
+    end_date = Column(String, nullable=True)
+    exam_day = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True) 
+    is_hidden = Column(Boolean, default=False) 
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
@@ -37,7 +57,6 @@ class Enrollment(Base):
     course_id = Column(String, ForeignKey("courses.id"), nullable=False)
     grade = Column(Float, nullable=True)
 
-# --- NEW TABLE FOR SCHEDULES ---
 class CourseSession(Base):
     __tablename__ = "course_sessions"
     id = Column(Integer, primary_key=True, index=True)
@@ -46,7 +65,7 @@ class CourseSession(Base):
     start_time = Column(String, nullable=False)
     end_time = Column(String, nullable=False)
     location = Column(String, nullable=False)
-    session_type = Column(String, nullable=False) # e.g., Lecture, Lab
+    session_type = Column(String, nullable=False)
 
 Base.metadata.create_all(bind=engine)
 

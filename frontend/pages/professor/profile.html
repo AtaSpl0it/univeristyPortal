@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - SAS University</title>
+    <title>Professor Profile - SAS University</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -23,17 +23,25 @@
                 <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
                 <li><a href="profile.html" class="active"><span class="nav-icon">👤</span> Profile</a></li>
                 <li><a href="courses.html"><span class="nav-icon">📚</span> My Courses</a></li>
-                <li><a href="enrollment.html"><span class="nav-icon">📝</span> Enrollment</a></li>
                 <li><a href="schedule.html"><span class="nav-icon">📅</span> Schedule</a></li>
             </ul>
         </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">P</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Professor</div>
+                    <div class="user-role" id="sidebar-role">Faculty</div>
+                </div>
+            </div>
+        </div>
     </aside>
 
     <main class="main-content">
         <header class="top-header">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-                <h1 class="page-title">Profile</h1>
+                <h1 class="page-title">Professor Profile</h1>
             </div>
             <div class="header-actions">
                 <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
@@ -48,17 +56,20 @@
                 </div>
                 <div class="profile-info">
                     <h2 id="profile-name">Loading...</h2>
-                    <p>Professor</p>
+                    <p id="profile-subtext">Faculty Member • Active Status</p>
                 </div>
             </div>
 
             <div class="profile-section">
                 <h3>Personal Information</h3>
                 <div class="info-grid">
-                    <div class="info-item"><label>Name</label><span id="detail-name">...</span></div>
-                    <div class="info-item"><label>Role</label><span>Professor</span></div>
-                    <div class="info-item"><label>National ID</label><span>...</span></div>
-                    <div class="info-item"><label>Department</label><span>...</span></div>
+                    <div class="info-item"><label>Full Name</label><span id="detail-name">...</span></div>
+                    <div class="info-item"><label>Faculty ID (Username)</label><span id="detail-username">...</span></div>
+                    <div class="info-item"><label>National ID</label><span id="detail-national">...</span></div>
+                    <div class="info-item"><label>Role</label><span id="detail-role">...</span></div>
+                    <div class="info-item"><label>Date of Birth</label><span id="detail-dob">...</span></div>
+                    <div class="info-item"><label>Phone Number</label><span id="detail-phone">...</span></div>
+                    <div class="info-item" style="grid-column: span 2;"><label>Address</label><span id="detail-address">...</span></div>
                 </div>
             </div>
 
@@ -71,7 +82,7 @@
                                 <div style="font-weight: 600;">Password</div>
                                 <div style="font-size: 13px; color: var(--text-muted);">Manage your account security</div>
                             </div>
-                            <button class="btn btn-secondary" disabled>Change Password</button>
+                            <button class="btn btn-secondary" onclick="openModal('passwordModal')">Change Password</button>
                         </div>
                     </div>
                 </div>
@@ -79,20 +90,100 @@
         </div>
     </main>
 
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Change Password</h3>
+                <button class="modal-close" onclick="closeModal('passwordModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" id="currentPwd" class="form-input" placeholder="Enter current password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" id="newPwd" class="form-input" placeholder="Enter new password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirmPwd" class="form-input" placeholder="Confirm new password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('passwordModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitPasswordChange()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../../js/main.js"></script>
-    <script>
+    <script type="module">
+        import api from '../../js/api.js';
+
         window.logout = function() {
             localStorage.clear();
             window.location.href = '/'; 
         };
-
-        // Populate what we know from localStorage
-        document.addEventListener('DOMContentLoaded', () => {
-            const username = localStorage.getItem('userName') || 'Professor';
-            document.getElementById('profile-name').textContent = username;
-            document.getElementById('detail-name').textContent = username;
-            document.getElementById('profile-avatar').textContent = username.charAt(0).toUpperCase();
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const profile = await api.get('/auth/profile');
+                
+                document.getElementById('profile-name').textContent = profile.name;
+                document.getElementById('detail-name').textContent = profile.name;
+                document.getElementById('detail-username').textContent = profile.username;
+                document.getElementById('detail-national').textContent = profile.national_id;
+                document.getElementById('detail-role').textContent = profile.role;
+                document.getElementById('detail-dob').textContent = profile.date_of_birth;
+                document.getElementById('detail-phone').textContent = profile.phone_number;
+                document.getElementById('detail-address').textContent = profile.address;
+                
+                document.getElementById('profile-avatar').textContent = profile.name.charAt(0).toUpperCase();
+                document.getElementById('sidebar-avatar').textContent = profile.name.charAt(0).toUpperCase();
+                document.getElementById('sidebar-name').textContent = profile.name;
+                
+            } catch (error) {
+                if(typeof showToast === 'function') showToast('Failed to load profile data', 'error');
+            }
         });
+
+        window.submitPasswordChange = async function() {
+            const currentPwd = document.getElementById('currentPwd').value;
+            const newPwd = document.getElementById('newPwd').value;
+            const confirmPwd = document.getElementById('confirmPwd').value;
+
+            if (!currentPwd || !newPwd || !confirmPwd) {
+                if(typeof showToast === 'function') showToast('Please fill all fields', 'warning');
+                return;
+            }
+
+            if (newPwd !== confirmPwd) {
+                if(typeof showToast === 'function') showToast('New passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                await api.put('/auth/change-password', {
+                    current_password: currentPwd,
+                    new_password: newPwd
+                });
+                
+                if(typeof showToast === 'function') showToast('Password updated successfully', 'success');
+                closeModal('passwordModal');
+                
+                document.getElementById('currentPwd').value = '';
+                document.getElementById('newPwd').value = '';
+                document.getElementById('confirmPwd').value = '';
+                
+            } catch (error) {
+                const errorMsg = error.response && error.response.data && error.response.data.detail 
+                                 ? error.response.data.detail 
+                                 : 'Failed to update password';
+                if(typeof showToast === 'function') showToast(errorMsg, 'error');
+            }
+        };
     </script>
 </body>
 </html>

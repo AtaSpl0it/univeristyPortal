@@ -16,7 +16,6 @@
                     <p>SAS University - Student Academic System</p>
                 </div>
                 
-                <!-- Removed onsubmit="handleLogin(event)" to prevent scope conflicts -->
                 <form id="loginForm">
                     <div class="form-group">
                         <label class="form-label">Username</label>
@@ -36,7 +35,7 @@
                             <input type="checkbox" style="width: 16px; height: 16px;">
                             Remember me
                         </label>
-                        <a href="#" style="font-size: 14px; color: var(--accent-secondary);">Forgot password?</a>
+                        <a href="#" onclick="openModal('forgotPasswordModal')" style="font-size: 14px; color: var(--accent-secondary);">Forgot password?</a>
                     </div>
                     
                     <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
@@ -51,40 +50,85 @@
         </div>
     </div>
 
-    <!-- Keep main.js for UI functions like showToast -->
+    <!-- Forgot Password Modal -->
+    <div class="modal-overlay" id="forgotPasswordModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Reset Password</h3>
+                <button class="modal-close" onclick="closeModal('forgotPasswordModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+                    Enter your username to request a password reset. If approved by an admin, your password will be reset to your National ID.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="resetUsername" class="form-input" placeholder="Enter your username">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('forgotPasswordModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitPasswordReset()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/main.js"></script>
-    
-    <!-- Use type="module" to import auth.js safely -->
     <script type="module">
         import auth from './js/auth.js';
 
-        // Fast route redirect check: if user already has tokens, bypass login form automatically
         if (localStorage.getItem('token') && localStorage.getItem('user_role')) {
             auth.redirectToDashboard(localStorage.getItem('user_role'));
         }
 
         const form = document.getElementById('loginForm');
+        const BASE_URL = `http://${window.location.hostname}:3000/api`;
 
         form.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Explicitly block the browser from refreshing
-
+            e.preventDefault(); 
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
             try {
-                // Pass credentials to your auth.js logic
                 await auth.login(username, password);
             } catch (error) {
                 console.error("Login Integration Error:", error);
-                
-                // Trigger the toast notification from main.js
                 if (typeof showToast === 'function') {
-                    showToast(/*error.message || */'Invalid username or password.', 'error');
+                    showToast('Invalid username or password.', 'error');
                 } else {
-                    alert(/*error.message || */'Invalid username or password.');
+                    alert('Invalid username or password.');
                 }
             }
         });
+
+        window.submitPasswordReset = async function() {
+            const username = document.getElementById('resetUsername').value.trim();
+            if (!username) {
+                if(typeof showToast === 'function') showToast('Please enter your username', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username })
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || 'Server Error');
+                }
+
+                if(typeof showToast === 'function') showToast(result.message, 'success');
+                closeModal('forgotPasswordModal');
+                document.getElementById('resetUsername').value = '';
+                
+            } catch (error) {
+                if(typeof showToast === 'function') showToast(error.message, 'error');
+            }
+        };
     </script>
 </body>
 </html>

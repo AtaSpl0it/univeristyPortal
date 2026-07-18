@@ -24,7 +24,8 @@
                 <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
                 <li><a href="courses.html" class="active"><span class="nav-icon">📚</span> All Courses</a></li>
                 <li><a href="students.html"><span class="nav-icon">🎓</span> All Students</a></li>
-                <li><a href="requests.html"><span class="nav-icon">📝</span> Signup Requests</a></li>
+                <li><a href="professors.html"><span class="nav-icon">👨‍🏫</span> Instructors</a></li>
+                <li><a href="requests.html"><span class="nav-icon">📝</span> Requests</a></li>
             </ul>
         </nav>
         <div class="sidebar-footer">
@@ -57,7 +58,6 @@
                     <input type="text" id="courseSearch" placeholder="Search courses by name or code...">
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary" onclick="openModal('addProfessorModal')">+ Add Instructor</button>
                     <button class="btn btn-primary" onclick="openModal('addCourseModal'); isEditMode = false;">+ Add Course</button>
                 </div>
             </div>
@@ -70,7 +70,7 @@
                             <th>Course Name</th>
                             <th>Instructor</th>
                             <th>Credits</th>
-                            <th>Students</th>
+                            <th>Dates & Deadlines</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -83,32 +83,53 @@
         </div>
     </main>
 
-    <!-- Add/Edit Course Modal -->
+    <!-- Expanded Add/Edit Course Modal -->
     <div class="modal-overlay" id="addCourseModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
                 <h3 id="modalTitle">Course Details</h3>
                 <button class="modal-close" onclick="closeModal('addCourseModal')">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
+            <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Course Code (ID)</label>
                     <input type="text" id="courseCode" class="form-input" placeholder="e.g. CE-103">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label">Course Name</label>
                     <input type="text" id="courseName" class="form-input" placeholder="e.g. Database Systems">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Instructor</label>
-                    <select id="courseProfessor" class="form-select">
-                        <option value="">Select Instructor</option>
-                        <!-- Professor options injected dynamically -->
-                    </select>
+                    <select id="courseProfessor" class="form-select"></select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Units / Credits</label>
                     <input type="number" id="courseUnits" class="form-input" placeholder="3">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Selection Deadline</label>
+                    <input type="date" id="courseDeadline" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Exam Date</label>
+                    <input type="date" id="courseExam" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Course Start Date</label>
+                    <input type="date" id="courseStart" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Course End Date</label>
+                    <input type="date" id="courseEnd" class="form-input">
+                </div>
+                <div class="form-group" style="grid-column: span 2; display: flex; gap: 20px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="courseActive" checked> Course is Active (Enrollment Open)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="courseHidden"> Hide from Students
+                    </label>
                 </div>
             </div>
             <div class="modal-footer">
@@ -118,41 +139,12 @@
         </div>
     </div>
 
-    <!-- Add Professor Modal -->
-    <div class="modal-overlay" id="addProfessorModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Add New Instructor</h3>
-                <button class="modal-close" onclick="closeModal('addProfessorModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" id="profName" class="form-input" placeholder="e.g. Dr. Sarah Connor">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Login Username</label>
-                    <input type="text" id="profUsername" class="form-input" placeholder="e.g. sarah_connor">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Temporary Password</label>
-                    <input type="password" id="profPassword" class="form-input" placeholder="Enter a secure password">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('addProfessorModal')">Cancel</button>
-                <button class="btn btn-primary" id="saveProfessorBtn">Save Instructor</button>
-            </div>
-        </div>
-    </div>
-
     <script src="../../js/main.js"></script>
     <script type="module">
         import api from '../../js/api.js';
 
-        const BASE_URL = 'http://localhost:3000/api';
+        const BASE_URL = `http://${window.location.hostname}:3000/api`;
         
-        // Advanced fetch wrapper that properly parses FastAPI 422 Errors
         const customFetch = async (endpoint, method, body = null) => {
             const options = {
                 method: method,
@@ -168,7 +160,6 @@
                 const err = await response.json().catch(() => ({}));
                 let errorMsg = err.detail || 'Server Error';
                 
-                // If FastAPI returned an array of validation errors, parse it cleanly
                 if (Array.isArray(errorMsg)) {
                     errorMsg = errorMsg.map(e => `${e.loc[e.loc.length-1]}: ${e.msg}`).join(' | ');
                 } else if (typeof errorMsg === 'object') {
@@ -183,10 +174,9 @@
         const tableBody = document.querySelector('#coursesTable tbody');
         window.isEditMode = false; 
 
-        // 1. Fetch Professors
         async function loadProfessors() {
             try {
-                const professors = await api.get('/admin/professors');
+                const professors = await customFetch('/admin/professors', 'GET');
                 const profSelect = document.getElementById('courseProfessor');
                 profSelect.innerHTML = '<option value="">Select Instructor</option>';
                 
@@ -201,50 +191,54 @@
             }
         }
 
-        // 2. Load Courses
         async function loadCourses() {
             try {
-                const courses = await api.get('/admin/all-courses');
+                const courses = await customFetch('/admin/all-courses', 'GET');
                 tableBody.innerHTML = ''; 
-
                 if (courses.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No courses found.</td></tr>';
                     return;
                 }
 
-                courses.forEach(course => {
+                courses.forEach(c => {
+                    const visibility = c.is_hidden ? '<span style="color:red; font-size:12px;">(Hidden)</span>' : '';
+                    const statusClass = c.is_active ? 'active' : 'pending';
+                    const statusText = c.is_active ? 'Active' : 'Disabled';
+                    
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>${course.id}</strong></td>
-                        <td>${course.name}</td>
-                        <td>${course.professor}</td>
-                        <td>${course.credits}</td>
-                        <td>${course.students}</td>
-                        <td><span class="status-badge active">${course.status}</span></td>
+                        <td><strong>${c.id}</strong> <br>${visibility}</td>
+                        <td>${c.name}</td>
+                        <td>${c.professor}</td>
+                        <td>${c.credits}</td>
+                        <td style="font-size:12px;">
+                            Start: ${c.start_date || '-'}<br>
+                            Deadline: ${c.selection_deadline || '-'}
+                        </td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-secondary edit-btn" data-id="${course.id}" data-name="${course.name}" data-credits="${course.credits}" data-prof="${course.professor}">✏️</button>
-                            <button class="btn btn-sm btn-danger delete-btn" data-id="${course.id}">🗑️</button>
+                            <button class="btn btn-sm btn-secondary edit-btn" data-full='${JSON.stringify(c)}'>✏️</button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${c.id}">🗑️</button>
                         </td>
                     `;
                     tableBody.appendChild(tr);
                 });
                 attachActionListeners();
             } catch (error) {
-                showToast('Failed to load courses', 'error');
+                if(typeof showToast === 'function') showToast('Failed to load courses', 'error');
             }
         }
 
-        // 3. Attach Listeners 
         function attachActionListeners() {
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     if (confirm('Are you sure you want to delete this course?')) {
                         try {
                             await customFetch(`/admin/courses/${e.target.dataset.id}`, 'DELETE');
-                            showToast('Course deleted', 'success');
+                            if(typeof showToast === 'function') showToast('Course deleted', 'success');
                             loadCourses(); 
                         } catch (err) {
-                            showToast(err.message, 'error');
+                            if(typeof showToast === 'function') showToast(err.message, 'error');
                         }
                     }
                 });
@@ -252,78 +246,71 @@
 
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
+                    const c = JSON.parse(e.target.dataset.full);
                     window.isEditMode = true;
                     document.getElementById('modalTitle').textContent = 'Edit Course';
-                    document.getElementById('courseCode').value = e.target.dataset.id;
+                    document.getElementById('courseCode').value = c.id;
                     document.getElementById('courseCode').disabled = true; 
-                    document.getElementById('courseName').value = e.target.dataset.name;
-                    document.getElementById('courseUnits').value = e.target.dataset.credits;
-                    document.getElementById('courseProfessor').value = ""; 
+                    document.getElementById('courseName').value = c.name;
+                    document.getElementById('courseUnits').value = c.credits;
+                    
+                    if (c.professor && c.professor !== "Unassigned") {
+                        const profSelect = document.getElementById('courseProfessor');
+                        for(let i=0; i < profSelect.options.length; i++) {
+                            if(profSelect.options[i].text === c.professor) {
+                                profSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    } else {
+                        document.getElementById('courseProfessor').value = ""; 
+                    }
+                    
+                    document.getElementById('courseDeadline').value = c.selection_deadline || '';
+                    document.getElementById('courseExam').value = c.exam_day || '';
+                    document.getElementById('courseStart').value = c.start_date || '';
+                    document.getElementById('courseEnd').value = c.end_date || '';
+                    document.getElementById('courseActive').checked = c.is_active !== false; 
+                    document.getElementById('courseHidden').checked = c.is_hidden === true; 
                     document.getElementById('addCourseModal').classList.add('active');
                 });
             });
         }
 
-        // 4. Save/Update Course
         document.getElementById('saveCourseBtn').addEventListener('click', async () => {
             const payload = {
                 id: document.getElementById('courseCode').value.trim(),
                 name: document.getElementById('courseName').value.trim(),
                 credits: parseInt(document.getElementById('courseUnits').value) || 3,
-                professor_id: parseInt(document.getElementById('courseProfessor').value) || null
+                professor_id: parseInt(document.getElementById('courseProfessor').value) || null,
+                selection_deadline: document.getElementById('courseDeadline').value,
+                start_date: document.getElementById('courseStart').value,
+                end_date: document.getElementById('courseEnd').value,
+                exam_day: document.getElementById('courseExam').value,
+                is_active: document.getElementById('courseActive').checked,
+                is_hidden: document.getElementById('courseHidden').checked
             };
 
             if (!payload.id || !payload.name) {
-                showToast('Please fill in required fields', 'warning');
+                if(typeof showToast === 'function') showToast('Please fill in required fields', 'warning');
                 return;
             }
 
             try {
                 if (window.isEditMode) {
                     await customFetch(`/admin/courses/${payload.id}`, 'PUT', payload);
-                    showToast('Course updated', 'success');
+                    if(typeof showToast === 'function') showToast('Course updated', 'success');
                 } else {
-                    await customFetch('/admin/courses', 'POST', payload); // Pointing to our new robust endpoint
-                    showToast('Course added', 'success');
+                    await customFetch('/admin/courses', 'POST', payload);
+                    if(typeof showToast === 'function') showToast('Course added', 'success');
                 }
                 closeModal('addCourseModal');
                 loadCourses();
             } catch (error) {
-                showToast(error.message, 'error');
+                if(typeof showToast === 'function') showToast(error.message, 'error');
             }
         });
 
-        // 5. Save New Professor
-        document.getElementById('saveProfessorBtn').addEventListener('click', async () => {
-            const payload = {
-                name: document.getElementById('profName').value.trim(),
-                username: document.getElementById('profUsername').value.trim(),
-                password: document.getElementById('profPassword').value
-            };
-
-            if (!payload.name || !payload.username || !payload.password) {
-                showToast('All fields are required', 'warning');
-                return;
-            }
-
-            try {
-                await customFetch('/admin/professors', 'POST', payload);
-                showToast('Instructor added successfully', 'success');
-                closeModal('addProfessorModal');
-                
-                // Clear the form
-                document.getElementById('profName').value = '';
-                document.getElementById('profUsername').value = '';
-                document.getElementById('profPassword').value = '';
-                
-                // Reload the dropdowns
-                loadProfessors();
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        });
-
-        // 6. Reset Modal logic
         const originalOpenModal = window.openModal;
         window.openModal = function(id) {
             if(id === 'addCourseModal' && !window.isEditMode) {
@@ -333,12 +320,17 @@
                 document.getElementById('courseName').value = '';
                 document.getElementById('courseUnits').value = '';
                 document.getElementById('courseProfessor').value = '';
+                document.getElementById('courseDeadline').value = '';
+                document.getElementById('courseExam').value = '';
+                document.getElementById('courseStart').value = '';
+                document.getElementById('courseEnd').value = '';
+                document.getElementById('courseActive').checked = true;
+                document.getElementById('courseHidden').checked = false;
             }
             if (originalOpenModal) originalOpenModal(id);
             else document.getElementById(id).classList.add('active');
         };
 
-        // 7. Search filter logic
         document.getElementById('courseSearch').addEventListener('input', function() {
             const term = this.value.toLowerCase();
             document.querySelectorAll('#coursesTable tbody tr').forEach(row => {

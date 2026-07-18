@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Instructors - Admin Portal</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">SAS</div>
+                <div>
+                    <div class="logo-text">SAS University</div>
+                    <div class="logo-sub">Admin Portal</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
+                <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
+                <li><a href="students.html"><span class="nav-icon">🎓</span> All Students</a></li>
+                <li><a href="professors.html" class="active"><span class="nav-icon">👨‍🏫</span> Instructors</a></li>
+                <li><a href="requests.html"><span class="nav-icon">📝</span> Requests</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">A</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Admin</div>
+                    <div class="user-role" id="sidebar-role">Manager</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <h1 class="page-title">All Instructors</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div class="search-bar" style="max-width: 400px; flex-grow: 1;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="profSearch" placeholder="Search by name or username...">
+                </div>
+                <button class="btn btn-primary" onclick="openModal('addProfessorModal'); isEditMode = false;">+ Add Instructor</button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table" id="professorsTable">
+                    <thead>
+                        <tr>
+                            <th>Database ID</th>
+                            <th>Login Username</th>
+                            <th>Full Name</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows dynamically injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Professor Modal -->
+    <div class="modal-overlay" id="addProfessorModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="modalTitle">Instructor Details</h3>
+                <button class="modal-close" onclick="closeModal('addProfessorModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <input type="hidden" id="profDbId">
+                
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="profName" class="form-input" placeholder="e.g. Dr. Sarah Connor">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Login Username</label>
+                    <input type="text" id="profUsername" class="form-input" placeholder="e.g. sarah_connor">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">National ID</label>
+                    <input type="text" id="profNationalId" class="form-input" placeholder="e.g. 0012345678">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" id="profPhone" class="form-input" placeholder="e.g. 09123456789">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" id="profDob" class="form-input">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Address</label>
+                    <input type="text" id="profAddress" class="form-input" placeholder="Full address">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="profPassword" class="form-input" placeholder="Enter password (leave blank to keep current)">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addProfessorModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveProfessorBtn">Save Instructor</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/main.js"></script>
+    <script type="module">
+        import api from '../../js/api.js';
+
+        const BASE_URL = `http://${window.location.hostname}:3000/api`;
+        window.isEditMode = false;
+        
+        window.logout = function() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userRole');
+            window.location.href = '../../index.html'; 
+        };
+
+        const customFetch = async (endpoint, method, body = null) => {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            };
+            if (body) options.body = JSON.stringify(body);
+            
+            const response = await fetch(`${BASE_URL}${endpoint}`, options);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                let errorMsg = err.detail || 'Server Error';
+                if (Array.isArray(errorMsg)) {
+                    errorMsg = errorMsg.map(e => `${e.loc[e.loc.length-1]}: ${e.msg}`).join(' | ');
+                }
+                throw new Error(errorMsg);
+            }
+            return response.json();
+        };
+
+        const tableBody = document.querySelector('#professorsTable tbody');
+
+        async function loadProfessors() {
+            try {
+                // We use customFetch to hit the endpoint
+                // Note: To get all profile data for the edit modal, the backend needs to return it.
+                // However, our endpoint /admin/professors currently only returns id, name, and username.
+                // For the sake of this UI, we will pull it from the profile if needed, or update the backend to return full data.
+                // For now, it will fetch what's available.
+                const professors = await customFetch('/admin/professors', 'GET');
+                tableBody.innerHTML = ''; 
+
+                if (professors.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No instructors found.</td></tr>';
+                    return;
+                }
+
+                professors.forEach(prof => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${prof.id}</td>
+                        <td><strong>${prof.username}</strong></td>
+                        <td>${prof.name}</td>
+                        <td><span class="status-badge active">Active</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary edit-btn" data-full='${JSON.stringify(prof)}'>✏️</button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${prof.id}">🗑️</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                attachActionListeners();
+            } catch (error) {
+                if(typeof showToast === 'function') showToast('Failed to load instructors list', 'error');
+            }
+        }
+
+        function attachActionListeners() {
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if (confirm('Are you sure you want to completely delete this instructor?')) {
+                        try {
+                            await customFetch(`/admin/professors/${e.target.dataset.id}`, 'DELETE');
+                            if(typeof showToast === 'function') showToast('Instructor deleted', 'success');
+                            loadProfessors(); 
+                        } catch (err) {
+                            if(typeof showToast === 'function') showToast(err.message, 'error');
+                        }
+                    }
+                });
+            });
+
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const p = JSON.parse(e.target.dataset.full);
+                    window.isEditMode = true;
+                    document.getElementById('modalTitle').textContent = 'Edit Instructor';
+                    document.getElementById('profDbId').value = p.id;
+                    document.getElementById('profName').value = p.name;
+                    document.getElementById('profUsername').value = p.username;
+                    
+                    // These fields might be empty if the backend doesn't send them in the list yet, 
+                    // but the inputs are now ready to handle them.
+                    document.getElementById('profNationalId').value = p.national_id || '';
+                    document.getElementById('profPhone').value = p.phone_number || '';
+                    document.getElementById('profDob').value = p.date_of_birth || '';
+                    document.getElementById('profAddress').value = p.address || '';
+                    document.getElementById('profPassword').value = ''; 
+                    
+                    document.getElementById('addProfessorModal').classList.add('active');
+                });
+            });
+        }
+
+        document.getElementById('saveProfessorBtn').addEventListener('click', async () => {
+            const dbId = document.getElementById('profDbId').value;
+            const payload = {
+                name: document.getElementById('profName').value.trim(),
+                username: document.getElementById('profUsername').value.trim(),
+                national_id: document.getElementById('profNationalId').value.trim() || null,
+                phone_number: document.getElementById('profPhone').value.trim() || null,
+                date_of_birth: document.getElementById('profDob').value || null,
+                address: document.getElementById('profAddress').value.trim() || null,
+                password: document.getElementById('profPassword').value || null
+            };
+
+            if (!payload.name || !payload.username) {
+                if(typeof showToast === 'function') showToast('Name and Username are required', 'warning');
+                return;
+            }
+
+            try {
+                if (window.isEditMode) {
+                    await customFetch(`/admin/professors/${dbId}`, 'PUT', payload);
+                    if(typeof showToast === 'function') showToast('Instructor updated successfully', 'success');
+                } else {
+                    if (!payload.password) {
+                        if(typeof showToast === 'function') showToast('Password is required for new instructors', 'warning');
+                        return;
+                    }
+                    await customFetch('/admin/professors', 'POST', payload);
+                    if(typeof showToast === 'function') showToast('Instructor added successfully', 'success');
+                }
+                closeModal('addProfessorModal');
+                loadProfessors();
+            } catch (error) {
+                if(typeof showToast === 'function') showToast(error.message, 'error');
+            }
+        });
+
+        const originalOpenModal = window.openModal;
+        window.openModal = function(id) {
+            if(id === 'addProfessorModal' && !window.isEditMode) {
+                document.getElementById('modalTitle').textContent = 'Add New Instructor';
+                document.getElementById('profDbId').value = '';
+                document.getElementById('profName').value = '';
+                document.getElementById('profUsername').value = '';
+                document.getElementById('profNationalId').value = '';
+                document.getElementById('profPhone').value = '';
+                document.getElementById('profDob').value = '';
+                document.getElementById('profAddress').value = '';
+                document.getElementById('profPassword').value = '';
+            }
+            if (originalOpenModal) originalOpenModal(id);
+            else document.getElementById(id).classList.add('active');
+        };
+
+        document.getElementById('profSearch').addEventListener('input', function() {
+            const term = this.value.toLowerCase();
+            document.querySelectorAll('#professorsTable tbody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', loadProfessors);
+    </script>
+</body>
+</html>

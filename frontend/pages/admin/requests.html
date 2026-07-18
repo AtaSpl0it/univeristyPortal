@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup Requests - Admin Portal</title>
+    <title>Requests - Admin Portal</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <aside class="sidebar">
-        <!-- Sidebar content (unchanged) -->
         <div class="sidebar-header">
             <div class="logo">
                 <div class="logo-icon">SAS</div>
@@ -25,16 +24,26 @@
                 <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
                 <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
                 <li><a href="students.html"><span class="nav-icon">🎓</span> All Students</a></li>
-                <li><a href="requests.html" class="active"><span class="nav-icon">📝</span> Signup Requests</a></li>
+                <li><a href="professors.html"><span class="nav-icon">👨‍🏫</span> Instructors</a></li>
+                <li><a href="requests.html" class="active"><span class="nav-icon">📝</span> Requests</a></li>
             </ul>
         </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">A</div>
+                <div>
+                    <div class="user-name" id="sidebar-name">Admin</div>
+                    <div class="user-role" id="sidebar-role">Manager</div>
+                </div>
+            </div>
+        </div>
     </aside>
 
     <main class="main-content">
         <header class="top-header">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-                <h1 class="page-title">Pending Signup Requests</h1>
+                <h1 class="page-title">Pending Requests</h1>
             </div>
             <div class="header-actions">
                 <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
@@ -43,22 +52,51 @@
         </header>
 
         <div class="content-body">
-            <div class="table-container">
-                <table class="data-table" id="requestsTable">
-                    <thead>
-                        <tr>
-                            <th>Request ID</th>
-                            <th>National ID (Login)</th>
-                            <th>Full Name</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Rows dynamically injected -->
-                    </tbody>
-                </table>
+            
+            <div class="card" style="margin-bottom: 30px;">
+                <div class="card-header">
+                    <h3>🎓 Pending Student Signups</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="signupTable">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>National ID</th>
+                                <th>Full Name</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamically injected -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>🔒 Password Reset Requests</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="passwordTable">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Student ID (Login)</th>
+                                <th>Full Name</th>
+                                <th>National ID (New Pass)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamically injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -88,15 +126,14 @@
             return response.json();
         };
 
-        const tableBody = document.querySelector('#requestsTable tbody');
-
-        async function loadRequests() {
+        async function loadSignupRequests() {
+            const tbody = document.querySelector('#signupTable tbody');
             try {
                 const requests = await api.get('/admin/signup-requests');
-                tableBody.innerHTML = ''; 
+                tbody.innerHTML = ''; 
 
                 if (requests.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No pending requests.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No pending signups.</td></tr>';
                     return;
                 }
 
@@ -108,50 +145,89 @@
                         <td>${req.name}</td>
                         <td><span class="status-badge pending" style="background-color: #fff3cd; color: #856404;">${req.status}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-primary approve-btn" data-id="${req.id}">✔️ Approve</button>
-                            <button class="btn btn-sm btn-danger reject-btn" data-id="${req.id}">❌ Reject</button>
+                            <button class="btn btn-sm btn-primary approve-signup" data-id="${req.id}">✔️ Approve</button>
+                            <button class="btn btn-sm btn-danger reject-signup" data-id="${req.id}">❌ Reject</button>
                         </td>
                     `;
-                    tableBody.appendChild(tr);
+                    tbody.appendChild(tr);
                 });
-
-                attachActionListeners();
             } catch (error) {
-                if (typeof showToast === 'function') showToast('Failed to load requests', 'error');
+                if (typeof showToast === 'function') showToast('Failed to load signup requests', 'error');
+            }
+        }
+
+        async function loadPasswordRequests() {
+            const tbody = document.querySelector('#passwordTable tbody');
+            try {
+                const requests = await api.get('/admin/password-requests');
+                tbody.innerHTML = ''; 
+
+                if (requests.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No password resets pending.</td></tr>';
+                    return;
+                }
+
+                requests.forEach(req => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${req.request_id}</td>
+                        <td><strong>${req.username}</strong></td>
+                        <td>${req.name}</td>
+                        <td>${req.national_id}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary approve-password" data-id="${req.request_id}">✔️ Reset to National ID</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                if (typeof showToast === 'function') showToast('Failed to load password requests', 'error');
             }
         }
 
         function attachActionListeners() {
-            document.querySelectorAll('.approve-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const id = e.target.dataset.id;
+            document.body.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('approve-signup')) {
                     try {
-                        await customFetch(`/admin/signup-requests/${id}/approve`, 'POST');
+                        await customFetch(`/admin/signup-requests/${e.target.dataset.id}/approve`, 'POST');
                         if (typeof showToast === 'function') showToast('Student approved and registered!', 'success');
-                        loadRequests(); 
+                        loadSignupRequests(); 
                     } catch (err) {
                         if (typeof showToast === 'function') showToast(err.message, 'error');
                     }
-                });
-            });
-
-            document.querySelectorAll('.reject-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const id = e.target.dataset.id;
-                    if (confirm('Are you sure you want to reject this signup?')) {
+                }
+                
+                if (e.target.classList.contains('reject-signup')) {
+                    if (confirm('Reject this signup?')) {
                         try {
-                            await customFetch(`/admin/signup-requests/${id}/reject`, 'POST');
+                            await customFetch(`/admin/signup-requests/${e.target.dataset.id}/reject`, 'POST');
                             if (typeof showToast === 'function') showToast('Request rejected.', 'success');
-                            loadRequests(); 
+                            loadSignupRequests(); 
                         } catch (err) {
                             if (typeof showToast === 'function') showToast(err.message, 'error');
                         }
                     }
-                });
+                }
+
+                if (e.target.classList.contains('approve-password')) {
+                    if (confirm('Reset this users password to their National ID?')) {
+                        try {
+                            await customFetch(`/admin/password-requests/${e.target.dataset.id}/approve`, 'POST');
+                            if (typeof showToast === 'function') showToast('Password reset successful!', 'success');
+                            loadPasswordRequests(); 
+                        } catch (err) {
+                            if (typeof showToast === 'function') showToast(err.message, 'error');
+                        }
+                    }
+                }
             });
         }
 
-        document.addEventListener('DOMContentLoaded', loadRequests);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSignupRequests();
+            loadPasswordRequests();
+            attachActionListeners();
+        });
     </script>
 </body>
 </html>

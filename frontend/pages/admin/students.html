@@ -24,7 +24,8 @@
                 <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
                 <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
                 <li><a href="students.html" class="active"><span class="nav-icon">🎓</span> All Students</a></li>
-                <li><a href="requests.html"><span class="nav-icon">📝</span> Signup Requests</a></li>
+                <li><a href="professors.html"><span class="nav-icon">👨‍🏫</span> Instructors</a></li>
+                <li><a href="requests.html"><span class="nav-icon">📝</span> Requests</a></li>
             </ul>
         </nav>
         <div class="sidebar-footer">
@@ -54,7 +55,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                 <div class="search-bar" style="max-width: 400px; flex-grow: 1;">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="studentSearch" placeholder="Search by name or student number...">
+                    <input type="text" id="studentSearch" placeholder="Search by name, student number, or national ID...">
                 </div>
                 <button class="btn btn-primary" onclick="openModal('addStudentModal'); isEditMode = false;">+ Add Student</button>
             </div>
@@ -64,6 +65,7 @@
                     <thead>
                         <tr>
                             <th>Student Number</th>
+                            <th>National ID</th>
                             <th>Name</th>
                             <th>Enrolled Courses</th>
                             <th>GPA (out of 20)</th>
@@ -79,6 +81,34 @@
         </div>
     </main>
 
+    <!-- View Profile Modal -->
+    <div class="modal-overlay" id="viewProfileModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Student Profile</h3>
+                <button class="modal-close" onclick="closeModal('viewProfileModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-header" style="margin-bottom: 20px;">
+                    <div class="profile-avatar-large" id="viewAvatar">S</div>
+                    <div class="profile-info">
+                        <h2 id="viewName">Name</h2>
+                        <p>Enrolled Student</p>
+                    </div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item"><label>Student Number</label><span id="viewStudentNum">...</span></div>
+                    <div class="info-item"><label>National ID</label><span id="viewNationalId">...</span></div>
+                    <div class="info-item"><label>Enrolled Courses</label><span id="viewCourses">...</span></div>
+                    <div class="info-item"><label>GPA</label><span id="viewGpa">...</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('viewProfileModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add/Edit Student Modal -->
     <div class="modal-overlay" id="addStudentModal">
         <div class="modal">
@@ -91,8 +121,12 @@
                 <input type="hidden" id="studentDbId"> 
                 
                 <div class="form-group">
-                    <label class="form-label">Student Number (Username)</label>
+                    <label class="form-label">Student Number (Login)</label>
                     <input type="text" id="studentNum" class="form-input" placeholder="e.g. 9912345">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">National ID</label>
+                    <input type="text" id="studentNationalId" class="form-input" placeholder="e.g. 0012345678">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Full Name</label>
@@ -100,7 +134,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" id="studentPass" class="form-input" placeholder="Leave blank to keep current">
+                    <input type="password" id="studentPass" class="form-input" placeholder="Leave blank to use National ID">
                 </div>
             </div>
             <div class="modal-footer">
@@ -114,10 +148,8 @@
     <script type="module">
         import api from '../../js/api.js';
 
-        // Automatically use the host's IP address instead of hardcoding
         const BASE_URL = `http://${window.location.hostname}:3000/api`;
         
-        // Bulletproof Logout logic attached to window so inline HTML onclick works
         window.logout = function() {
             localStorage.removeItem('token');
             localStorage.removeItem('user_role');
@@ -153,12 +185,11 @@
 
         async function loadStudents() {
             try {
-                // Using standard API wrapper for GET request
-                const students = await api.get('/admin/students');
+                const students = await customFetch('/admin/students', 'GET');
                 tableBody.innerHTML = ''; 
 
                 if (students.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No students found.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students found.</td></tr>';
                     return;
                 }
 
@@ -166,12 +197,14 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><strong>${student.student_number}</strong></td>
+                        <td>${student.national_id || '-'}</td>
                         <td>${student.name}</td>
                         <td>${student.enrolled_courses}</td>
                         <td><span style="color: ${student.gpa >= 10 ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight: 600;">${student.gpa > 0 ? student.gpa : '-'}</span></td>
                         <td><span class="status-badge active">${student.status}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-secondary edit-btn" data-id="${student.db_id}" data-num="${student.student_number}" data-name="${student.name}">✏️</button>
+                            <button class="btn btn-sm btn-primary view-btn" data-full='${JSON.stringify(student)}'>👁️ View</button>
+                            <button class="btn btn-sm btn-secondary edit-btn" data-full='${JSON.stringify(student)}'>✏️</button>
                             <button class="btn btn-sm btn-danger delete-btn" data-id="${student.db_id}">🗑️</button>
                         </td>
                     `;
@@ -180,20 +213,33 @@
 
                 attachActionListeners();
             } catch (error) {
-                showToast('Failed to load students list', 'error');
+                if(typeof showToast === 'function') showToast('Failed to load students list', 'error');
             }
         }
 
         function attachActionListeners() {
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const s = JSON.parse(e.target.dataset.full);
+                    document.getElementById('viewName').textContent = s.name;
+                    document.getElementById('viewAvatar').textContent = s.name.charAt(0).toUpperCase();
+                    document.getElementById('viewStudentNum').textContent = s.student_number;
+                    document.getElementById('viewNationalId').textContent = s.national_id || 'N/A';
+                    document.getElementById('viewCourses').textContent = s.enrolled_courses;
+                    document.getElementById('viewGpa').textContent = s.gpa > 0 ? s.gpa : '-';
+                    document.getElementById('viewProfileModal').classList.add('active');
+                });
+            });
+
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     if (confirm('Are you sure you want to completely delete this student?')) {
                         try {
                             await customFetch(`/admin/students/${e.target.dataset.id}`, 'DELETE');
-                            showToast('Student deleted', 'success');
+                            if(typeof showToast === 'function') showToast('Student deleted', 'success');
                             loadStudents(); 
                         } catch (err) {
-                            showToast(err.message, 'error');
+                            if(typeof showToast === 'function') showToast(err.message, 'error');
                         }
                     }
                 });
@@ -201,12 +247,14 @@
 
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
+                    const s = JSON.parse(e.target.dataset.full);
                     window.isEditMode = true;
                     document.getElementById('modalTitle').textContent = 'Edit Student';
-                    document.getElementById('studentDbId').value = e.target.dataset.id;
-                    document.getElementById('studentNum').value = e.target.dataset.num;
-                    document.getElementById('studentName').value = e.target.dataset.name;
-                    document.getElementById('studentPass').value = ''; // Leave blank by default
+                    document.getElementById('studentDbId').value = s.db_id;
+                    document.getElementById('studentNum').value = s.student_number;
+                    document.getElementById('studentName').value = s.name;
+                    document.getElementById('studentNationalId').value = s.national_id || '';
+                    document.getElementById('studentPass').value = ''; 
                     document.getElementById('addStudentModal').classList.add('active');
                 });
             });
@@ -216,31 +264,31 @@
             const dbId = document.getElementById('studentDbId').value;
             const payload = {
                 username: document.getElementById('studentNum').value.trim(),
+                national_id: document.getElementById('studentNationalId').value.trim(),
                 name: document.getElementById('studentName').value.trim(),
                 password: document.getElementById('studentPass').value || null
             };
 
-            if (!payload.username || !payload.name) {
-                showToast('Student number and name are required', 'warning');
+            if (!payload.username || !payload.name || !payload.national_id) {
+                if(typeof showToast === 'function') showToast('Student number, National ID, and name are required', 'warning');
                 return;
             }
 
             try {
                 if (window.isEditMode) {
                     await customFetch(`/admin/students/${dbId}`, 'PUT', payload);
-                    showToast('Student updated successfully', 'success');
+                    if(typeof showToast === 'function') showToast('Student updated successfully', 'success');
                 } else {
                     await customFetch('/admin/students', 'POST', payload);
-                    showToast('Student added successfully', 'success');
+                    if(typeof showToast === 'function') showToast('Student added successfully', 'success');
                 }
                 closeModal('addStudentModal');
                 loadStudents();
             } catch (error) {
-                showToast(error.message, 'error');
+                if(typeof showToast === 'function') showToast(error.message, 'error');
             }
         });
 
-        // Reset Modal logic
         const originalOpenModal = window.openModal;
         window.openModal = function(id) {
             if(id === 'addStudentModal' && !window.isEditMode) {
@@ -248,13 +296,13 @@
                 document.getElementById('studentDbId').value = '';
                 document.getElementById('studentNum').value = '';
                 document.getElementById('studentName').value = '';
+                document.getElementById('studentNationalId').value = '';
                 document.getElementById('studentPass').value = '';
             }
             if (originalOpenModal) originalOpenModal(id);
             else document.getElementById(id).classList.add('active');
         };
 
-        // Search filter
         document.getElementById('studentSearch').addEventListener('input', function() {
             const term = this.value.toLowerCase();
             document.querySelectorAll('#studentsTable tbody tr').forEach(row => {

@@ -24,7 +24,8 @@
                 <li><a href="profile.html"><span class="nav-icon">👤</span> Profile</a></li>
                 <li><a href="courses.html"><span class="nav-icon">📚</span> All Courses</a></li>
                 <li><a href="students.html"><span class="nav-icon">🎓</span> All Students</a></li>
-                <li><a href="requests.html"><span class="nav-icon">📝</span> Signup Requests</a></li>
+                <li><a href="professors.html"><span class="nav-icon">👨‍🏫</span> Instructors</a></li>
+                <li><a href="requests.html"><span class="nav-icon">📝</span> Requests</a></li>
             </ul>
         </nav>
         <div class="sidebar-footer">
@@ -90,7 +91,6 @@
                         <h3>📝 Recent Signup Requests</h3>
                         <a href="requests.html" class="btn btn-sm btn-secondary">View All</a>
                     </div>
-                    <!-- Added ID and cleared fake data here -->
                     <div class="card-body" id="recentRequestsContainer">
                         <!-- Dynamic requests will be injected here -->
                     </div>
@@ -102,42 +102,7 @@
                         <a href="courses.html" class="btn btn-sm btn-secondary">View All</a>
                     </div>
                     <div class="card-body">
-                        <div class="course-card" style="margin-bottom: 12px;">
-                            <div class="course-header">
-                                <span class="course-code">CS-301</span>
-                                <span style="font-size: 12px; color: var(--text-muted);">Today, 9:00 AM</span>
-                            </div>
-                            <div class="course-name">Advanced Algorithms</div>
-                            <div class="course-meta">
-                                <span>👨‍🏫 Dr. Smith</span>
-                                <span>👥 45 Students</span>
-                                <span>📍 Hall A-102</span>
-                            </div>
-                        </div>
-                        <div class="course-card" style="margin-bottom: 12px;">
-                            <div class="course-header">
-                                <span class="course-code">MATH-205</span>
-                                <span style="font-size: 12px; color: var(--text-muted);">Today, 11:00 AM</span>
-                            </div>
-                            <div class="course-name">Linear Algebra</div>
-                            <div class="course-meta">
-                                <span>👨‍🏫 Prof. Johnson</span>
-                                <span>👥 38 Students</span>
-                                <span>📍 Hall B-205</span>
-                            </div>
-                        </div>
-                        <div class="course-card">
-                            <div class="course-header">
-                                <span class="course-code">PHY-401</span>
-                                <span style="font-size: 12px; color: var(--text-muted);">Today, 2:00 PM</span>
-                            </div>
-                            <div class="course-name">Quantum Mechanics</div>
-                            <div class="course-meta">
-                                <span>👨‍🏫 Dr. Brown</span>
-                                <span>👥 22 Students</span>
-                                <span>📍 Lab C-301</span>
-                            </div>
-                        </div>
+                        <!-- Dynamic courses injected here via JS -->
                     </div>
                 </div>
             </div>
@@ -148,18 +113,32 @@
     <script type="module">
         import api from '../../js/api.js';
 
-        // Fix logout route for the dashboard
         window.logout = function() {
             localStorage.clear();
             window.location.href = '/'; 
         };
 
+        const BASE_URL = `http://${window.location.hostname}:3000/api`;
+
+        const customFetch = async (endpoint, method) => {
+            const response = await fetch(`${BASE_URL}${endpoint}`, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.detail || 'Server Error');
+            }
+            return response.json();
+        };
+
         async function loadDashboardData() {
             try {
-                // 1. Fetch and inject top-level statistics
-                const stats = await api.get('/admin/stats');
+                const stats = await customFetch('/admin/stats', 'GET');
                 
-                // Select the stat cards by their index (since they don't have IDs yet)
                 const statValues = document.querySelectorAll('.stat-value');
                 if (statValues.length >= 4) {
                     statValues[0].textContent = stats.activeCourses;
@@ -168,19 +147,16 @@
                     statValues[3].textContent = stats.attendanceRate + '%';
                 }
 
-                // 2. Fetch and render the Upcoming Courses list
-                const courses = await api.get('/admin/recent-courses');
+                const courses = await customFetch('/admin/recent-courses', 'GET');
                 
-                // Find the container holding the upcoming courses
                 const coursesContainer = document.querySelector('.cards-grid .card:nth-child(2) .card-body');
-                coursesContainer.innerHTML = ''; // Clear the hardcoded HTML
+                coursesContainer.innerHTML = ''; 
 
                 if (courses.length === 0) {
                     coursesContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No active courses found.</p>';
                     return;
                 }
 
-                // Inject the live database courses
                 courses.forEach(course => {
                     const courseCard = document.createElement('div');
                     courseCard.className = 'course-card';
@@ -201,7 +177,7 @@
 
             } catch (error) {
                 console.error("Failed to load dashboard data:", error);
-                if (typeof showToast === 'function') showToast('خطا در دریافت اطلاعات داشبورد', 'error');
+                if (typeof showToast === 'function') showToast('Failed to retrieve dashboard information', 'error');
             }
         }
 
@@ -210,8 +186,7 @@
             if (!container) return;
 
             try {
-                // Use the API wrapper instead of raw fetch to handle tokens automatically
-                const requests = await api.get('/admin/recent-requests');
+                const requests = await customFetch('/admin/recent-requests', 'GET');
                 container.innerHTML = ''; 
                 
                 if (requests.length === 0) {
@@ -220,9 +195,7 @@
                 }
 
                 requests.forEach(req => {
-                    // Extract initials from full name
                     const initials = req.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-
                     const item = document.createElement('div');
                     item.className = 'request-item';
                     
@@ -244,7 +217,6 @@
             }
         }
 
-        // Run the fetch functions as soon as the page loads
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
             loadRecentRequests();
