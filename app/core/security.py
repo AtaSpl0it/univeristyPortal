@@ -5,7 +5,7 @@ from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "super-secret-university-key"
+SECRET_KEY = "yek_kelide_test_baraye_app_changethis_to_use_vase_estefade_avaz_konin"
 ALGORITHM = "HS256"
 security = HTTPBearer()
 

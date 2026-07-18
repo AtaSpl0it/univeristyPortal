@@ -14,7 +14,6 @@ class User(Base):
     role = Column(String, nullable=False)
     name = Column(String, nullable=False)
     national_id = Column(String, unique=True, nullable=True) 
-    # New Profile Fields
     phone_number = Column(String, nullable=True)
     address = Column(String, nullable=True)
     date_of_birth = Column(String, nullable=True)
@@ -26,7 +25,6 @@ class SignupRequest(Base):
     name = Column(String)
     password = Column(String)
     status = Column(String, default="Pending")
-    # New Profile Fields
     phone_number = Column(String, nullable=True)
     address = Column(String, nullable=True)
     date_of_birth = Column(String, nullable=True)

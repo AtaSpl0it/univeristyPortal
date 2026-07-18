@@ -17,8 +17,7 @@ from app.core.security import (
 )
 from pydantic import BaseModel, Field
 
-# ==========================================
-# INLINE SCHEMAS 
+# Inline schemas and base models
 # ==========================================
 class UserLogin(BaseModel):
     username: str
@@ -76,8 +75,8 @@ class SessionCreate(BaseModel):
 
 router = APIRouter()
 
-# ==========================================
-# 1. AUTHENTICATION & PROFILES
+
+# Auth part
 # ==========================================
 @router.get("/auth/profile", tags=["Auth"])
 def get_user_profile(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
@@ -167,8 +166,7 @@ def login(req: UserLogin, db: Session = Depends(get_db)):
     token = create_access_token(data={"sub": user.username, "role": user.role})
     return {"access_token": token, "token_type": "bearer"}
 
-# ==========================================
-# 2. ADMIN / MANAGER DASHBOARD
+#adminDashoard
 # ==========================================
 @router.get("/admin/stats", tags=["Admin"])
 def get_admin_stats(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
@@ -186,7 +184,7 @@ def get_admin_stats(db: Session = Depends(get_db), current_user: dict = Depends(
         "attendanceRate": 92.5 
     }
 
-# --- Requests Management ---
+# Requests management
 @router.get("/admin/signup-requests", tags=["Admin"])
 def get_signup_requests(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
     if current_user["role"].lower() not in ["manager", "admin"]:
@@ -246,7 +244,7 @@ def reject_request(req_id: int, db: Session = Depends(get_db), current_user: dic
     db.commit()
     return {"message": "Request successfully rejected"}
 
-# --- Password Resets Management ---
+#Password Reset
 @router.get("/admin/password-requests", tags=["Admin"])
 def get_password_requests(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
     if current_user["role"].lower() not in ["manager", "admin"]:
@@ -281,7 +279,7 @@ def approve_password_reset(req_id: int, db: Session = Depends(get_db), current_u
     db.commit()
     return {"message": "Password has been reset to the user's National ID."}
 
-# --- Student Management ---
+#Student management
 @router.get("/admin/students", tags=["Admin"])
 def get_all_students(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
     if current_user["role"].lower() not in ["manager", "admin"]: 
@@ -363,7 +361,7 @@ def delete_student(student_id: int, db: Session = Depends(get_db), current_user:
     db.commit()
     return {"message": "Student deleted successfully"}
 
-# --- Professor Management ---
+#Professor management
 @router.get("/admin/professors", tags=["Admin"])
 def get_professors(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
     if current_user["role"].lower() not in ["manager", "admin"]: 
@@ -431,7 +429,7 @@ def delete_professor(prof_id: int, db: Session = Depends(get_db), current_user: 
     db.commit()
     return {"message": "Professor deleted successfully"}
 
-# --- Course Management ---
+# Course mnagement
 @router.get("/admin/all-courses", tags=["Admin"])
 def get_all_courses(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
     if current_user["role"].lower() not in ["manager", "admin"]: 
@@ -540,8 +538,8 @@ def delete_course(course_id: str, db: Session = Depends(get_db), current_user: d
     db.commit()
     return {"message": "Course successfully deleted"}
 
-# ==========================================
-# 3. PROFESSOR DASHBOARD
+
+# 3. Professor dashboard
 # ==========================================
 @router.get("/professor/stats", tags=["Professor"])
 def get_professor_stats(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
@@ -659,8 +657,8 @@ def delete_schedule_session(session_id: int, db: Session = Depends(get_db), curr
     db.commit()
     return {"message": "Session deleted successfully"}
 
-# ==========================================
-# 4. STUDENT DASHBOARD
+
+# 4.Student dashboard
 # ==========================================
 @router.get("/student/stats", tags=["Student"])
 def get_student_stats(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_token)):
